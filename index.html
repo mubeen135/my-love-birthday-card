@@ -499,7 +499,7 @@ const CONFIG = {
   name: "Mehreen",                   // her name (shown in particles, letter & finale)
   nickname: "meri jaan",             // the pet name you call her
   from: "",                          // your name under the signature (optional)
-  music: "assets/birthday.mp3",      // optional — leave "" for no music
+  music: "",                         // "" = built-in music box; or e.g. "assets/birthday.mp3" for your own song
   portrait: "images/avatar.jpg",     // round glowing photo in the finale
 
   photos: [
@@ -792,25 +792,121 @@ function frame(now) {
 }
 
 /* ---------------- Music ---------------- */
+// Built-in music box: a soft "Happy Birthday" with warm chords, made live in the browser.
+// Used whenever CONFIG.music is empty or the file can't be loaded.
+const MusicBox = (() => {
+  let ctx, master, bus, timer, idx = 0, loopStart = 0, playing = false;
+  const BEAT = 60 / 86, LOOK = .5;
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+  const NOTE = { F4: 65, G4: 67, A4: 69, B4: 71, C5: 72, D5: 74, E5: 76, F5: 77, G5: 79 };
+  const CHORD = { C: [48, 55, 60, 64], G: [43, 50, 59, 65], F: [41, 53, 57, 60], Am: [45, 52, 57, 60] };
+  const MELODY = [
+    ['G4', .75], ['G4', .25], ['A4', 1], ['G4', 1], ['C5', 1], ['B4', 2],
+    ['G4', .75], ['G4', .25], ['A4', 1], ['G4', 1], ['D5', 1], ['C5', 2],
+    ['G4', .75], ['G4', .25], ['G5', 1], ['E5', 1], ['C5', 1], ['B4', 1], ['A4', 2],
+    ['F5', .75], ['F5', .25], ['E5', 1], ['C5', 1], ['D5', 1], ['C5', 3]
+  ];
+  const PADS = [['C', 0, 4], ['G', 4, 6], ['C', 10, 2], ['C', 12, 4], ['F', 16, 3], ['C', 19, 3], ['G', 22, 1], ['C', 23, 3]];
+  const INTERLUDE = ['C', 'Am', 'F', 'G'];
+  const EVENTS = [];
+  let t = 0;
+  for (const [n, d] of MELODY) { EVENTS.push({ t, kind: 'bell', m: NOTE[n], v: .22 }); t += d; }
+  for (const [c, at, d] of PADS) EVENTS.push({ t: at, kind: 'pad', notes: CHORD[c], d: d * BEAT });
+  INTERLUDE.forEach((c, i) => {
+    const at = 26 + i * 2, top = CHORD[c].slice(1).map(m => m + 12);
+    EVENTS.push({ t: at, kind: 'pad', notes: CHORD[c], d: 2 * BEAT });
+    [...top, top[1] + 12].forEach((m, j) => EVENTS.push({ t: at + j * .5, kind: 'bell', m, v: .09 }));
+  });
+  const LOOP = 34;
+  EVENTS.sort((a, b) => a.t - b.t);
+
+  function build() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0;
+    const comp = ctx.createDynamicsCompressor();
+    master.connect(comp).connect(ctx.destination);
+    bus = ctx.createGain();
+    const verb = ctx.createConvolver(), len = ctx.sampleRate * 2.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    verb.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = .45;
+    bus.connect(master); bus.connect(verb); verb.connect(wet).connect(master);
+  }
+  function bell(at, m, v) {
+    const f = hz(m);
+    for (const [mul, amp, dur] of [[1, 1, 2.2], [2, .3, 1.2], [3.01, .1, .6], [4.2, .05, .35]]) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f * mul;
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v * amp, at + .006);
+      g.gain.exponentialRampToValueAtTime(.0001, at + dur);
+      o.connect(g).connect(bus); o.start(at); o.stop(at + dur + .05);
+    }
+  }
+  function pad(at, notes, dur) {
+    for (const m of notes) for (const det of [-7, 7]) {
+      const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = det;
+      f.type = 'lowpass'; f.frequency.value = 650;
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.011, at + .5);
+      g.gain.setValueAtTime(.011, at + Math.max(.5, dur - .3)); g.gain.linearRampToValueAtTime(0, at + dur + .9);
+      o.connect(f).connect(g).connect(bus); o.start(at); o.stop(at + dur + 1);
+    }
+  }
+  function tick() {
+    for (;;) {
+      const ev = EVENTS[idx], at = loopStart + ev.t * BEAT;
+      if (at > ctx.currentTime + LOOK) break;
+      if (at >= ctx.currentTime - .05) ev.kind === 'bell' ? bell(at, ev.m, ev.v) : pad(at, ev.notes, ev.d);
+      if (++idx >= EVENTS.length) { idx = 0; loopStart += LOOP * BEAT; }
+    }
+  }
+  return {
+    start() {
+      if (!ctx) build();
+      ctx.resume();
+      if (playing) return;
+      playing = true; idx = 0; loopStart = ctx.currentTime + .15;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(.6, ctx.currentTime + 2.5);
+      clearInterval(timer); timer = setInterval(tick, 90); tick();
+    },
+    stop() {
+      if (!playing) return;
+      playing = false; clearInterval(timer);
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0, ctx.currentTime + .6);
+      setTimeout(() => { if (!playing) ctx.suspend(); }, 700);
+    },
+    pauseForHidden(hidden) { if (ctx && playing) hidden ? ctx.suspend() : ctx.resume(); }
+  };
+})();
+
 const audio = new Audio(), musicBtn = $('#musicBtn');
-let musicOK = !!CONFIG.music;
-if (musicOK) {
+let musicMode = CONFIG.music ? 'file' : 'box', musicOn = false;
+if (CONFIG.music) {
   audio.src = CONFIG.music; audio.loop = true; audio.preload = 'auto';
-  audio.addEventListener('error', () => { musicOK = false; musicBtn.hidden = true; });
-} else musicBtn.hidden = true;
-function fadeVolume(to, ms = 1800) {
-  const from = audio.volume, t0 = performance.now();
-  (function step(n) { const k = Math.min(1, (n - t0) / ms); audio.volume = from + (to - from) * k; if (k < 1) requestAnimationFrame(step); else if (!to) audio.pause(); })(t0);
+  audio.addEventListener('error', () => { musicMode = 'box'; });
 }
 function playMusic() {
-  if (!musicOK || !audio.paused) return;
-  audio.volume = 0;
-  audio.play().then(() => { musicBtn.classList.add('playing'); fadeVolume(.7); }).catch(() => {});
+  if (musicOn) return;
+  musicOn = true; musicBtn.classList.add('playing');
+  if (musicMode === 'file') {
+    audio.play().catch(() => { musicMode = 'box'; if (musicOn) MusicBox.start(); });
+  } else MusicBox.start();
 }
-musicBtn.onclick = () => {
-  if (audio.paused) playMusic();
-  else { musicBtn.classList.remove('playing'); fadeVolume(0, 600); }
-};
+function stopMusic() {
+  musicOn = false; musicBtn.classList.remove('playing');
+  audio.pause(); MusicBox.stop();
+}
+musicBtn.onclick = () => musicOn ? stopMusic() : playMusic();
+document.addEventListener('visibilitychange', () => {
+  if (!musicOn) return;
+  if (musicMode === 'file') document.hidden ? audio.pause() : audio.play().catch(() => {});
+  else MusicBox.pauseForHidden(document.hidden);
+});
 
 /* ---------------- Scene engine ---------------- */
 const ORDER = ['intro', 'reveal', 'cake', 'quotes', 'memories', 'letter', 'finale'];
