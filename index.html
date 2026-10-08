@@ -499,7 +499,8 @@ const CONFIG = {
   name: "Mehreen",                   // her name (shown in particles, letter & finale)
   nickname: "meri jaan",             // the pet name you call her
   from: "",                          // your name under the signature (optional)
-  music: "",                         // "" = built-in music box; or e.g. "assets/birthday.mp3" for your own song
+  music: "assets/birthday.mp3",      // your song (Kesariya piano/flute). If missing, the built-in music box plays instead
+  musicStart: 0,                     // second to start the song from, e.g. 45 to begin at 0:45
   portrait: "images/avatar.jpg",     // round glowing photo in the finale
 
   photos: [
@@ -880,21 +881,33 @@ const MusicBox = (() => {
       master.gain.linearRampToValueAtTime(0, ctx.currentTime + .6);
       setTimeout(() => { if (!playing) ctx.suspend(); }, 700);
     },
-    pauseForHidden(hidden) { if (ctx && playing) hidden ? ctx.suspend() : ctx.resume(); }
+    pauseForHidden(hidden) { if (ctx && playing) hidden ? ctx.suspend() : ctx.resume(); },
+    unlock() { if (!ctx) build(); ctx.resume(); }   // must run inside a tap so phones allow sound later
   };
 })();
 
 const audio = new Audio(), musicBtn = $('#musicBtn');
 let musicMode = CONFIG.music ? 'file' : 'box', musicOn = false;
 if (CONFIG.music) {
-  audio.src = CONFIG.music; audio.loop = true; audio.preload = 'auto';
+  audio.src = CONFIG.music + (CONFIG.musicStart ? `#t=${CONFIG.musicStart}` : '');
+  audio.loop = true; audio.preload = 'auto';
   audio.addEventListener('error', () => { musicMode = 'box'; });
+}
+function fadeIn(ms = 2500) {
+  const t0 = performance.now();
+  (function step(n) {
+    if (!musicOn) return;
+    try { audio.volume = Math.min(.9, (n - t0) / ms * .9); } catch {}
+    if (n - t0 < ms) requestAnimationFrame(step);
+  })(t0);
 }
 function playMusic() {
   if (musicOn) return;
   musicOn = true; musicBtn.classList.add('playing');
   if (musicMode === 'file') {
-    audio.play().catch(() => { musicMode = 'box'; if (musicOn) MusicBox.start(); });
+    MusicBox.unlock();                 // backup ready in case the song can't play
+    try { audio.volume = 0; } catch {}
+    audio.play().then(() => fadeIn()).catch(() => { musicMode = 'box'; if (musicOn) MusicBox.start(); });
   } else MusicBox.start();
 }
 function stopMusic() {
