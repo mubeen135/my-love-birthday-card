@@ -289,6 +289,23 @@ blockquote{font-family:var(--serif);font-style:italic;font-weight:500;font-size:
 .promise{font-family:var(--script);font-size:clamp(1.6rem,5vw,2.1rem);color:var(--gold);margin-top:1.4rem;
   text-shadow:0 0 20px rgba(255,210,122,.55)}
 
+/* ---------- Motion: heart wipe, kinetic letters, handwriting, ripples ---------- */
+.wipe{position:fixed;left:0;top:0;width:120px;height:110px;margin:-55px 0 0 -60px;z-index:44;pointer-events:none;opacity:0;will-change:transform,opacity}
+.wipe svg{width:100%;height:100%;display:block;overflow:visible}
+.kin .w8{display:inline-block;white-space:nowrap}
+.kin .ch{display:inline-block;opacity:0}
+.kin.play .ch{animation:chIn 1s var(--ease) forwards;animation-delay:calc(var(--d,0ms) + var(--ci) * 32ms)}
+@keyframes chIn{from{opacity:0;transform:translateY(.6em) rotate(6deg) scale(.9);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
+.write{-webkit-mask-image:linear-gradient(90deg,#000 44%,transparent 56%);mask-image:linear-gradient(90deg,#000 44%,transparent 56%);
+  -webkit-mask-size:250% 100%;mask-size:250% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:100% 0;mask-position:100% 0}
+.write.play{animation:writeOn 2.6s cubic-bezier(.45,.05,.25,1) var(--d,0ms) forwards}
+.title-script.write.play{animation:shimmer 7s linear infinite,writeOn 2.6s cubic-bezier(.45,.05,.25,1) var(--d,0ms) forwards}
+@keyframes writeOn{to{-webkit-mask-position:0 0;mask-position:0 0}}
+.ripple{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,255,255,.7),rgba(255,255,255,0) 70%);animation:ripple .8s ease-out forwards}
+@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(18);opacity:0}}
+
 @media (max-width:420px){.brand{font-size:1.35rem}.progress{gap:5px}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
@@ -303,6 +320,12 @@ blockquote{font-family:var(--serif);font-style:italic;font-weight:500;font-size:
 <div class="cursor-glow" id="cursorGlow"></div>
 <canvas id="fx"></canvas>
 <div class="veil" id="veil"></div>
+<div class="wipe" id="wipe" aria-hidden="true">
+  <svg viewBox="0 0 100 92">
+    <defs><radialGradient id="wipeG" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="#ff86ab"/><stop offset=".38" stop-color="#d81b60"/><stop offset="1" stop-color="#4a0826"/></radialGradient></defs>
+    <path fill="url(#wipeG)" d="M50 86C50 86 4 58 4 28 4 13 15 4 28 4c10 0 18 6 22 15C54 10 62 4 72 4c13 0 24 9 24 24 0 30-46 58-46 58z"/>
+  </svg>
+</div>
 <div class="grain"></div>
 
 <header class="topbar">
@@ -584,10 +607,33 @@ const BOKEH = PALETTE.slice(0, 5).map(col => sprite(96, (g, r) => {
 const HEARTS = PALETTE.slice(0, 6).map(col => sprite(64, (g, r) => {
   g.shadowColor = col; g.shadowBlur = 14; g.fillStyle = col; heartPath(g, r, r + 2, 34); g.fill();
 }));
+const PETALS = ['#ff4d7e', '#ff8fab', '#e8285f', '#ffc2d1'].map(col => sprite(48, (g, r) => {
+  const gr = g.createRadialGradient(r * .8, r * .7, 2, r, r, r);
+  gr.addColorStop(0, '#fff0f4'); gr.addColorStop(.35, col); gr.addColorStop(1, hexA(col, .85));
+  g.fillStyle = gr; g.beginPath();
+  g.moveTo(r, r * 1.9); g.bezierCurveTo(r * .1, r * 1.5, r * .05, r * .5, r * .6, r * .15);
+  g.quadraticCurveTo(r, r * .45, r * 1.4, r * .15); g.bezierCurveTo(r * 1.95, r * .5, r * 1.9, r * 1.5, r, r * 1.9);
+  g.fill();
+}));
+const LANTERN = sprite(96, (g, r) => {
+  const glow = g.createRadialGradient(r, r, 2, r, r, r);
+  glow.addColorStop(0, 'rgba(255,200,110,.55)'); glow.addColorStop(1, 'rgba(255,140,60,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, r * 2, r * 2);
+  const body = g.createLinearGradient(0, r * .55, 0, r * 1.45);
+  body.addColorStop(0, '#ffb35c'); body.addColorStop(.6, '#ffd27a'); body.addColorStop(1, '#fff3c4');
+  g.fillStyle = body; g.beginPath();
+  g.moveTo(r * .74, r * .55); g.lineTo(r * 1.26, r * .55); g.quadraticCurveTo(r * 1.36, r, r * 1.3, r * 1.42);
+  g.lineTo(r * .7, r * 1.42); g.quadraticCurveTo(r * .64, r, r * .74, r * .55); g.fill();
+  g.fillStyle = 'rgba(255,255,230,.9)'; g.beginPath(); g.ellipse(r, r * 1.38, r * .2, r * .05, 0, 0, Math.PI * 2); g.fill();
+});
 
 /* ---------------- Background: aurora, stars, bokeh, hearts ---------------- */
 const pointer = { x: W / 2, y: H / 2, nx: 0, ny: 0 }, par = { x: 0, y: 0 };
-const bg = { stars: [], bokeh: [], hearts: [], energy: 1, target: 1 };
+const bg = { stars: [], bokeh: [], hearts: [], energy: 1, target: 1,
+  petals: [], petalTarget: 0, lanterns: [], lanternsOn: false, shooting: [], nextShoot: 2500 };
+const newPetal = () => ({ x: rand(-40, W + 40), y: -30, s: rand(12, 24), vy: rand(.6, 1.4), vx: rand(-.3, .6), rot: rand(0, 6.28),
+  vr: rand(-.03, .03), flip: rand(0, 6.28), vf: rand(.03, .07), sw: rand(0, 6.28), sp: pick(PETALS), a: rand(.7, .95), d: rand(.4, 1) });
+const newLantern = () => { const s = rand(16, 42); return { x: rand(W * .05, W * .95), y: H + rand(40, 160), s, vy: .2 + s / 42 * .55, sw: rand(0, 6.28), ph: rand(0, 6.28) }; };
 const BLOBS = [
   { c: '255,77,126', a: .20, r: .62, px: .25, py: .30, sx: .00021, sy: .00017, ph: 0 },
   { c: '200,120,255', a: .13, r: .55, px: .78, py: .25, sx: .00017, sy: .00023, ph: 2 },
@@ -630,7 +676,47 @@ function drawBg(t, dt) {
     bctx.globalAlpha = h.a;
     bctx.drawImage(h.s, h.x + Math.sin(h.ph) * 18 + par.x * h.d * 30 - h.size / 2, h.y + par.y * h.d * 30 - h.size / 2, h.size, h.size);
   }
-  bctx.globalAlpha = 1; bctx.globalCompositeOperation = 'source-over';
+  // shooting stars
+  if (!REDUCED && t > bg.nextShoot) {
+    const dir = Math.random() < .5 ? -1 : 1;
+    bg.shooting.push({ x: rand(W * .15, W * .85), y: rand(0, H * .3), vx: dir * rand(9, 14), vy: rand(3, 6), life: 0, max: rand(38, 55) });
+    bg.nextShoot = t + rand(3500, 8000);
+  }
+  bctx.lineCap = 'round'; bctx.lineWidth = 1.6;
+  for (let i = bg.shooting.length - 1; i >= 0; i--) {
+    const s = bg.shooting[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life += dt;
+    if (s.life > s.max) { bg.shooting.splice(i, 1); continue; }
+    const a = Math.sin(Math.PI * s.life / s.max), tx = s.x - s.vx * 11, ty = s.y - s.vy * 11;
+    const gr = bctx.createLinearGradient(s.x, s.y, tx, ty);
+    gr.addColorStop(0, `rgba(255,245,230,${a})`); gr.addColorStop(1, 'rgba(255,180,200,0)');
+    bctx.globalAlpha = 1; bctx.strokeStyle = gr;
+    bctx.beginPath(); bctx.moveTo(s.x, s.y); bctx.lineTo(tx, ty); bctx.stroke();
+    bctx.globalAlpha = a; bctx.drawImage(GLOW[6], s.x - 6, s.y - 6, 12, 12);
+  }
+  // sky lanterns (finale)
+  if (bg.lanternsOn && bg.lanterns.length < (COARSE ? 10 : 16) && Math.random() < .03 * dt) bg.lanterns.push(newLantern());
+  for (let i = bg.lanterns.length - 1; i >= 0; i--) {
+    const l = bg.lanterns[i];
+    l.y -= l.vy * dt; l.sw += .01 * dt; l.x += Math.sin(l.sw) * .25 * dt;
+    if (l.y < -90) { bg.lanterns.splice(i, 1); continue; }
+    bctx.globalAlpha = .75 + .25 * Math.sin(t * .008 + l.ph);
+    const w = l.s * 2.3;
+    bctx.drawImage(LANTERN, l.x - w / 2 + par.x * l.s * .6, l.y - w / 2 + par.y * l.s * .6, w, w);
+  }
+  // rose petals
+  bctx.globalCompositeOperation = 'source-over';
+  if (bg.petals.length < bg.petalTarget && Math.random() < .05 * dt) bg.petals.push(newPetal());
+  for (let i = bg.petals.length - 1; i >= 0; i--) {
+    const p = bg.petals[i];
+    p.y += p.vy * dt; p.sw += .02 * dt; p.x += (p.vx + Math.sin(p.sw) * .8) * dt; p.rot += p.vr * dt; p.flip += p.vf * dt;
+    if (p.y > H + 40 || p.x < -60 || p.x > W + 60) { bg.petals.splice(i, 1); continue; }
+    bctx.save();
+    bctx.translate(p.x + par.x * p.d * 30, p.y + par.y * p.d * 30); bctx.rotate(p.rot); bctx.scale(Math.cos(p.flip), 1);
+    bctx.globalAlpha = p.a; bctx.drawImage(p.sp, -p.s / 2, -p.s / 2, p.s, p.s);
+    bctx.restore();
+  }
+  bctx.globalAlpha = 1;
 }
 
 /* ---------------- FX particles: sparkles, hearts, fireworks ---------------- */
@@ -780,7 +866,25 @@ addEventListener('pointermove', e => {
   if (!REDUCED && Math.random() < .55) spawn({ x: e.clientX, y: e.clientY, vx: rand(-.6, .6), vy: rand(-.9, .1), g: -.01, drag: .96,
     life: rand(26, 46), size: rand(1.4, 3), sprite: pick([GLOW[2], GLOW[6], GLOW[1]]), shrink: true });
 }, { passive: true });
-addEventListener('pointerdown', e => heartBurst(e.clientX, e.clientY, REDUCED ? 3 : 7));
+let lastTap = { x: 0, y: 0, t: -1e9 };
+addEventListener('pointerdown', e => {
+  lastTap = { x: e.clientX, y: e.clientY, t: performance.now() };
+  heartBurst(e.clientX, e.clientY, REDUCED ? 3 : 7);
+  const b = e.target.closest?.('.btn');
+  if (b) {
+    const r = b.getBoundingClientRect(), s = document.createElement('span');
+    s.className = 'ripple'; s.style.left = `${e.clientX - r.left}px`; s.style.top = `${e.clientY - r.top}px`;
+    b.append(s); setTimeout(() => s.remove(), 800);
+  }
+});
+// Gentle parallax from phone tilt (Android; iOS would need a permission prompt, so it's skipped there)
+if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+  addEventListener('deviceorientation', e => {
+    if (e.gamma == null || !COARSE) return;
+    pointer.nx = Math.max(-1, Math.min(1, e.gamma / 25));
+    pointer.ny = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
+  });
+}
 
 let last = performance.now();
 function frame(now) {
@@ -995,29 +1099,90 @@ async function go(id) {
   if (busy || !next || next === current) return;
   busy = true; clearTimers();
   const prev = current; current = next;
-  $('#veil').animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 400 : 1500, easing: 'ease-in-out' });
+  const useWipe = prev && !REDUCED;
+  let wipeAt = null;
+  if (!useWipe) $('#veil').animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 400 : 1500, easing: 'ease-in-out' });
   if (prev) {
     hooks[prev.id]?.leave?.();
-    await prev.animate(
-      [{ opacity: 1, filter: 'blur(0px)', scale: 1 }, { opacity: 0, filter: 'blur(14px)', scale: 1.06 }],
-      { duration: REDUCED ? 250 : 700, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' }).finished;
+    if (useWipe) {
+      // A glowing heart grows from where she tapped, fills the screen, then dissolves into the next scene
+      const recent = performance.now() - lastTap.t < 1500;
+      const x = recent ? lastTap.x : W / 2, y = recent ? lastTap.y : H / 2;
+      const s = Math.hypot(Math.max(x, W - x), Math.max(y, H - y)) / 26;
+      wipeAt = { x, y, s };
+      sparkle(x, y, 24, 4);
+      prev.animate([{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(10px)' }], { duration: 650, easing: 'ease-in', fill: 'forwards' });
+      await wipe.animate([
+        { transform: `translate(${x}px,${y}px) scale(.1) rotate(-12deg)`, opacity: 0 },
+        { transform: `translate(${x}px,${y}px) scale(${s * .15}) rotate(-4deg)`, opacity: 1, offset: .35 },
+        { transform: `translate(${x}px,${y}px) scale(${s}) rotate(0deg)`, opacity: 1 }
+      ], { duration: 800, easing: 'cubic-bezier(.6,0,.25,1)', fill: 'forwards' }).finished;
+    } else {
+      await prev.animate(
+        [{ opacity: 1, filter: 'blur(0px)', scale: 1 }, { opacity: 0, filter: 'blur(14px)', scale: 1.06 }],
+        { duration: REDUCED ? 250 : 700, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' }).finished;
+    }
     prev.classList.remove('is-active');
     prev.getAnimations().forEach(a => a.cancel());
   }
   next.scrollTop = 0;
   next.classList.add('is-active');
+  if (wipeAt) {
+    const { x, y, s } = wipeAt;
+    wipe.animate([{ transform: `translate(${x}px,${y}px) scale(${s})`, opacity: 1 }, { transform: `translate(${x}px,${y}px) scale(${s * 1.3})`, opacity: 0 }],
+      { duration: 950, easing: 'ease-out', fill: 'forwards' });
+  }
   next.animate([{ opacity: 0, filter: 'blur(16px)', scale: .95 }, { opacity: 1, filter: 'blur(0px)', scale: 1 }],
     { duration: REDUCED ? 300 : 1200, easing: EASE });
-  revealIn($$('[data-r]', next), 250);
   const idx = ORDER.indexOf(id);
   [...progress.children].forEach((d, i) => { d.className = i < idx ? 'done' : i === idx ? 'on' : ''; });
+  bg.petalTarget = (PETAL_DENSITY[id] ?? 6) * (COARSE ? .7 : 1) * (REDUCED ? .25 : 1);
   hooks[id]?.enter?.();
+  revealIn($$('[data-r]', next), 250);
   setTimeout(() => busy = false, 500);
 }
+const wipe = $('#wipe');
+const PETAL_DENSITY = { intro: 16, reveal: 4, cake: 6, quotes: 6, memories: 6, letter: 8, finale: 26 };
+
+// Split a heading into per-letter spans (words kept together) so letters can rise in one by one
+function splitChars(el) {
+  if (el.querySelector('.ch')) return;
+  let ci = 0;
+  const walk = node => {
+    for (const n of [...node.childNodes]) {
+      if (n.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        for (const part of n.textContent.split(/(\s+)/)) {
+          if (!part) continue;
+          if (/^\s+$/.test(part)) { frag.append(part); continue; }
+          const w = document.createElement('span'); w.className = 'w8';
+          for (const c of part) {
+            const s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
+            s.style.setProperty('--ci', ci++); w.append(s);
+          }
+          frag.append(w);
+        }
+        n.replaceWith(frag);
+      } else if (n.nodeType === 1 && n.tagName !== 'BR') walk(n);
+    }
+  };
+  walk(el);
+}
+function playFx(el, cls, delay) {
+  el.classList.add(cls); el.classList.remove('play');
+  el.style.setProperty('--d', `${delay}ms`);
+  void el.offsetWidth; el.classList.add('play');
+}
 function revealIn(els, base = 0, gap = 130) {
-  els.forEach((el, i) => el.animate(
-    [{ opacity: 0, translate: '0 30px', filter: 'blur(8px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }],
-    { duration: REDUCED ? 1 : 1100, delay: REDUCED ? 0 : base + i * gap, easing: EASE, fill: 'backwards' }));
+  els.forEach((el, i) => {
+    const delay = REDUCED ? 0 : base + i * gap;
+    if (el.matches('.display, .name-line')) { splitChars(el); playFx(el, 'kin', delay); return; }
+    if (el.matches('.title-script, .promise')) { playFx(el, 'write', delay); return; }
+    const kf = el.matches('.eyebrow')
+      ? [{ opacity: 0, letterSpacing: '.7em', filter: 'blur(6px)' }, { opacity: 1, letterSpacing: '.38em', filter: 'blur(0px)' }]
+      : [{ opacity: 0, translate: '0 30px', filter: 'blur(8px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }];
+    el.animate(kf, { duration: REDUCED ? 1 : 1100, delay, easing: EASE, fill: 'backwards' });
+  });
 }
 function showEl(el) { el.hidden = false; revealIn([el]); }
 function swapText(el, html) {
@@ -1179,6 +1344,7 @@ function openEnvelope() {
         if (current?.id !== 'letter') return;
         $('.env-holder').hidden = true; $('#envHint').hidden = true;
         paper.hidden = false;
+        playFx($('#salute'), 'write', 350);
         paper.animate([{ opacity: 0, scale: '1 .7', translate: '0 50px', filter: 'blur(10px)' }, { opacity: 1, scale: '1 1', translate: '0 0', filter: 'blur(0px)' }],
           { duration: 1100, easing: EASE });
         typeLetter();
@@ -1217,6 +1383,17 @@ const hooks = {
   intro: {
     enter() {
       for (const el of [$('#heartPath'), $('.heart-draw')]) { el.style.animation = 'none'; el.getBoundingClientRect(); el.style.animation = ''; }
+      if (REDUCED) return;
+      // Two streams of gold sparkles orbit the glowing heart
+      const orbit = () => {
+        if (current?.id !== 'intro') return;
+        const r = $('.halo').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R = r.width * .47;
+        const a = performance.now() * .0016;
+        for (const ang of [a, a + Math.PI]) spawn({ x: cx + Math.cos(ang) * R, y: cy + Math.sin(ang) * R, vx: -Math.sin(ang) * .6, vy: Math.cos(ang) * .6,
+          g: -.005, drag: .97, life: rand(40, 60), size: rand(1.5, 3), sprite: pick([GLOW[2], GLOW[6], GLOW[1]]), shrink: true });
+        later(orbit, 45);
+      };
+      later(orbit, 1400);
     }
   },
   reveal: {
@@ -1263,9 +1440,12 @@ const hooks = {
   memories: {
     enter() {
       buildGallery();
-      $$('.memory').forEach((m, i) => m.animate(
-        [{ opacity: 0, translate: '0 60px', filter: 'blur(10px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }],
-        { duration: REDUCED ? 1 : 1200, delay: REDUCED ? 0 : 450 + i * 140, easing: EASE, fill: 'backwards' }));
+      // Cards are dealt out like a fan: from a tilted stack below into place, with a soft overshoot
+      const cards = $$('.memory'), mid = (cards.length - 1) / 2;
+      cards.forEach((m, i) => m.animate(
+        [{ opacity: 0, translate: `${(mid - i) * 60}px 180px`, rotate: `${(i - mid) * 16}deg`, scale: .7, filter: 'blur(8px)' },
+         { opacity: 1, translate: '0 0', rotate: '0deg', scale: 1, filter: 'blur(0px)' }],
+        { duration: REDUCED ? 1 : 1300, delay: REDUCED ? 0 : 550 + i * 170, easing: 'cubic-bezier(.2,1.15,.3,1)', fill: 'backwards' }));
     },
     leave() { lightbox.classList.remove('open'); }
   },
@@ -1280,14 +1460,14 @@ const hooks = {
   },
   finale: {
     enter() {
-      bg.target = 1.6;
+      bg.target = 1.6; bg.lanternsOn = true;
       later(() => { launch(W * .5, H * .2, 'heart', '#ff4d7e'); heartBurst(W / 2, H * .45, 16); }, 500);
       later(() => launch(W * .22, H * .3), 900);
       later(() => launch(W * .78, H * .28, 'heart', '#ffd27a'), 1200);
       const loop = () => { if (current?.id !== 'finale') return; launch(); later(loop, rand(REDUCED ? 2400 : 750, REDUCED ? 3600 : 1500)); };
       later(loop, 2200);
     },
-    leave() { bg.target = 1; }
+    leave() { bg.target = 1; bg.lanternsOn = false; }
   }
 };
 
