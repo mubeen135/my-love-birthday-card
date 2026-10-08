@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meri Jaan ❤️</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Poppins:wght@300;500&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+:root{
+  --bg1:#2b0a1e; --bg2:#12060f; --rose:#ff4d6d; --blush:#ffb3c6;
+  --cream:#fff0e6; --gold:#ffd166; --ink:#4a1d33;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--cream);
+  font-family:'Poppins',sans-serif;min-height:100vh;display:flex;
+  align-items:center;justify-content:center;text-align:center;overflow-x:hidden}
+
+/* ---------- Her photo in the background 📸 ---------- */
+.avatar-bg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:280px;height:280px;border-radius:50%;object-fit:cover;
+  opacity:.15;pointer-events:none;z-index:0;animation:glowPulse 4s infinite}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 40px rgba(255,77,109,.3)}
+  50%{box-shadow:0 0 80px rgba(255,77,109,.7)}}
+
+/* ---------- Acts ---------- */
+.scene{display:none;flex-direction:column;align-items:center;padding:2rem 1.5rem;
+  max-width:520px;width:100%;animation:fadeUp .9s ease both;position:relative;z-index:1}
+.scene.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px) scale(.96)}
+                  to{opacity:1;transform:none}}
+
+/* ---------- Headings & text ---------- */
+.pulse{font-size:4rem;animation:beat 1.3s infinite;margin-bottom:.5rem}
+@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.25)}
+  28%{transform:scale(1)}42%{transform:scale(1.16)}70%{transform:scale(1.05)}}
+h1{font-family:'Caveat',cursive;font-size:2.9rem;line-height:1.25;margin-bottom:.6rem;
+  background:linear-gradient(90deg,var(--blush),var(--gold),var(--blush));
+  background-size:200%;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;animation:shine 4s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.sub{font-weight:300;line-height:1.8;opacity:.92}
+.engl{font-family:'Playfair Display',serif;font-style:italic;
+  color:var(--gold);font-size:1.05rem;letter-spacing:.5px}
+.btn{margin-top:1.6rem;padding:.85rem 2.2rem;border:none;border-radius:50px;
+  cursor:pointer;background:linear-gradient(90deg,var(--rose),#c9184a);
+  color:#fff;font-weight:500;font-size:1rem;transition:transform .2s;
+  box-shadow:0 8px 24px rgba(255,77,109,.35)}
+.btn:hover{transform:scale(1.05)}
+.btn.hidden{display:none}
+
+/* ---------- Cake ---------- */
+.cake{font-size:5.2rem;animation:bob 2.2s infinite ease-in-out}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.flames{font-size:2.1rem;margin-top:-1.1rem}
+.flame{display:inline-block;animation:flick .35s infinite alternate;cursor:pointer;
+  filter:drop-shadow(0 0 6px #ffb347)}
+.flame.out{animation:none;opacity:.12;filter:none}
+@keyframes flick{from{transform:scale(1) rotate(-4deg)}
+                 to{transform:scale(1.18) rotate(4deg)}}
+
+/* ---------- Shayari cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;
+  width:100%;max-width:430px;margin-top:1.2rem}
+.fcard{perspective:900px;height:150px;cursor:pointer}
+.finner{position:relative;width:100%;height:100%;transition:transform .65s
+  cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
+.fcard.flip .finner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:16px;display:flex;align-items:center;
+  justify-content:center;padding:12px;backface-visibility:hidden}
+.front{background:linear-gradient(135deg,var(--rose),#c9184a);color:#fff;
+  font-size:1.6rem;box-shadow:0 8px 20px rgba(201,24,74,.35)}
+.back{background:var(--cream);color:var(--ink);transform:rotateY(180deg);
+  font-family:'Caveat',cursive;font-size:1.25rem;line-height:1.35;padding:10px}
+
+/* ---------- Polaroids ---------- */
+.polaroids{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:1.5rem}
+.polaroid{background:#fff;padding:10px 10px 14px;border-radius:6px;
+  box-shadow:0 12px 24px rgba(0,0,0,.35);max-width:180px;width:100%;
+  cursor:pointer;animation:slideIn .7s ease both;opacity:0;--rot:-4deg;
+  transform:translateY(0) rotate(var(--rot));transition:transform .3s}
+.polaroid:nth-child(even){--rot:4deg}
+.polaroid:nth-child(1){animation-delay:.1s}
+.polaroid:nth-child(2){animation-delay:.25s}
+.polaroid:nth-child(3){animation-delay:.4s}
+.polaroid:nth-child(4){animation-delay:.55s}
+@keyframes slideIn{from{opacity:0;transform:translateY(40px) rotate(0)}
+  to{opacity:1;transform:translateY(0) rotate(var(--rot))}}
+.polaroid:hover{transform:rotate(0) scale(1.08);z-index:2}
+.polaroid img{width:100%;height:150px;object-fit:cover;display:block;border-radius:3px}
+.polaroid img.fail{display:none}
+.polaroid.noimg{background:linear-gradient(135deg,var(--rose),#c9184a)}
+.polaroid.noimg::before{content:"❤️";font-size:3rem;height:150px;
+  display:flex;align-items:center;justify-content:center}
+.polaroid .cap{font-family:'Caveat',cursive;color:#333;font-size:1.15rem;
+  margin-top:.5rem;text-align:center}
+
+/* ---------- Lightbox ---------- */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;
+  align-items:center;justify-content:center;z-index:99;padding:2rem;flex-direction:column}
+.lightbox.show{display:flex}
+.lightbox img{max-width:90vw;max-height:65vh;border-radius:12px;
+  box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.lightbox .lcap{font-family:'Caveat',cursive;font-size:1.8rem;color:var(--blush);margin-top:1rem}
+.lightbox .close{position:absolute;top:1rem;right:1.8rem;color:#fff;
+  font-size:3rem;cursor:pointer;line-height:1}
+
+/* ---------- Stories ---------- */
+.story-title{font-family:'Caveat',cursive;font-size:2rem;color:var(--gold);margin-bottom:.4rem}
+.story-text{font-family:'Caveat',cursive;font-size:1.5rem;line-height:1.6;
+  min-height:10rem;color:var(--cream);white-space:pre-line}
+
+/* ---------- Seal & letter ---------- */
+.seal{font-size:6.5rem;cursor:pointer;user-select:none;transition:transform .15s}
+.seal.shake{animation:shake .3s}
+@keyframes shake{25%{transform:rotate(-12deg) scale(.92)}
+                 75%{transform:rotate(12deg) scale(.92)}}
+.paper{background:var(--cream);color:var(--ink);font-family:'Caveat',cursive;
+  font-size:1.42rem;line-height:1.55;padding:1.8rem 1.4rem;border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.55);max-height:62vh;overflow-y:auto;
+  white-space:pre-line;text-align:left;width:100%}
+
+/* ---------- Floating hearts bg ---------- */
+.hf{position:fixed;bottom:-50px;pointer-events:none;opacity:.45;
+  animation:rise linear infinite;z-index:0}
+@keyframes rise{to{transform:translateY(-115vh) rotate(18deg)}}
+
+/* ---------- Tap-trail hearts ---------- */
+.trail{position:fixed;pointer-events:none;font-size:1.2rem;z-index:100;
+  animation:popUp .9s ease-out forwards}
+@keyframes popUp{0%{transform:scale(.5);opacity:1;translate:0 0}
+  100%{transform:scale(1.5);opacity:0;translate:0 -80px}}
+</style>
+</head>
+<body>
+
+<!-- Her photo — glowing in the background 💗 -->
+<img src="images/avatar.jpg" class="avatar-bg" alt="Meri jaan"
+     onerror="this.style.display='none'">
+
+<!-- ACT 1: INTRO -->
+<div class="scene active" id="s1">
+  <div class="pulse">❤️</div>
+  <div class="engl">a little something, just for you</div>
+  <h1>Ek baat hai... suniye? 🥺</h1>
+  <p class="sub">Aaj ka din sirf calendar ka nahi hai.<br>
+  Kuch batana hai — kaan khol ke sunna 🎧</p>
+  <button class="btn" onclick="start()">Shuru karo ❤️</button>
+</div>
+
+<!-- ACT 2: CANDLES -->
+<div class="scene" id="s2">
+  <div class="cake">🎂</div>
+  <div class="flames" id="flames">
+    <span class="flame">🔥</span><span class="flame">🔥</span><span class="flame">🔥</span>
+  </div>
+  <h1>Make a wish... 🕯️</h1>
+  <p class="sub">Candles blow karo, ya flame tap karo 🎂<br>
+  <small>(dono chalta hai, meri jaan 😌)</small></p>
+  <p class="sub" id="micHint" style="font-size:.75rem;opacity:.6;margin-top:.5rem"></p>
+</div>
+
+<!-- ACT 3: SHAYARI -->
+<div class="scene" id="s3">
+  <h1>Ye cards sirf tumhare liye 💝</h1>
+  <p class="sub">Har card ke peeche kuch hai jo main<br>
+  kabhi kehna bhool jaati hoon... sab khol ke dekho</p>
+  <div class="grid" id="grid"></div>
+  <button class="btn hidden" id="cardsNext" onclick="toPhotos()">Dekho apni yaadein 📸</button>
+</div>
+
+<!-- ACT 4: PHOTOS -->
+<div class="scene" id="s4">
+  <h1>Hamari kuch tasveerein 📸</h1>
+  <p class="sub">Tap karke bada karo... har photo mein ek kahaani hai</p>
+  <div class="polaroids" id="polaroids"></div>
+  <button class="btn" style="margin-top:2rem" onclick="toStories()">Aage kya hai? 🥹</button>
+</div>
+
+<!-- ACT 5: STORIES -->
+<div class="scene" id="s5">
+  <h1>Hamari kuch yaadein 🥹</h1>
+  <div class="story-title" id="storyTitle"></div>
+  <div class="story-text" id="storyText"></div>
+  <button class="btn" id="storyBtn" onclick="nextStory()">Ek aur yaad hai? 🥹</button>
+</div>
+
+<!-- ACT 6: SEAL -->
+<div class="scene" id="s6">
+  <h1>Tumhare liye ek khat 💌</h1>
+  <p class="sub">Seal todne ke liye 3 baar tap karo...<br>
+  dhyan se — dil todne wala nahi 😌</p>
+  <div class="seal" id="seal">💌</div>
+</div>
+
+<!-- ACT 7: LETTER -->
+<div class="scene" id="s7">
+  <div class="paper" id="letterText"></div>
+  <button class="btn hidden" id="lastBtn" onclick="finale()">Last surprise... 🎆</button>
+</div>
+
+<!-- ACT 8: FINALE -->
+<div class="scene" id="s8">
+  <div class="pulse">🎂</div>
+  <h1 id="finaleH1"></h1>
+  <p class="sub">Ek saal aur badh gaya tumhara...<br>
+  par hamari kahani abhi likhi ja rahi hai —<br>
+  agla chapter hoga aur bhi pyara 🥂</p>
+  <p class="engl" style="margin-top:1rem">I love you. Today, tomorrow, always.</p>
+  <button class="btn" onclick="location.reload()">Phir se dekho 🔄</button>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="close">&times;</span>
+  <img id="lbImg" src="" alt="Photo">
+  <div class="lcap" id="lbCap"></div>
+</div>
+
+<script>
+/* ================= EDIT THIS SECTION ONLY ================= */
+const NAME = "Meri Jaan";   // apne partner ka naam
+
+// 📸 Background photo (uski best photo) — images/avatar.jpg
+// 📸 Polaroid photos — 4 memories
+const PHOTOS = [
+  { src: "images/photo1.jpg", caption: "Pehli mulaqat 💫" },
+  { src: "images/photo2.jpg", caption: "Wo 3 AM call 🌙" },
+  { src: "images/photo3.jpg", caption: "Kash hum hamesha aise hansein 😄" },
+  { src: "images/photo4.jpg", caption: "Teri wo smile ❤️" }
+];
+
+const SHAYARI = [
+  "Chaand ko dekh kar bhi sharma jaye... aisa chehra hai tera 🌙",
+  "Tere naam se shuru hoti hai har subah meri ☀️",
+  "Kuch log ghar hote hain... aur tu ghar jaisa lagta hai ❤️",
+  "Tera 'khaana kha liya?' meri favourite message hai 🍲",
+  "Tera haath chhoota hi hoon toh saari tension udd jaati hai ✨",
+  "Log pyaar define karte hain kitabon mein... maine tujh mein dekh liya 📖"
+];
+
+const STORIES = [
+  { title: "Woh pehli mulaqat 💫",
+    text: "Yaad hai jab hum pehli baar mile the? Main toh ghabra rahi thi aur tu bas muskura raha tha...\nUs din pata nahi tha ki yehi insaan meri zindagi ka sabse pyara chapter banega 🥹" },
+  { title: "3 AM wali baatein 🌙",
+    text: "Aur wo raatein... jab 3 baje tak baat chalti rahi.\nAankhein band ho rahi thi, par baat khatam hone ka naam hi nahi le rahi thi.\nKash wo raatein wapas aa paati 🌙" },
+  { title: "Jab main toot gayi thi 🤍",
+    text: "Us din main bilkul toot chuki thi...\nTune kuch nahi bola. Bas mera haath pakad liya.\nUs din samajh gayi thi — tu mera hai. Hamesha ❤️" },
+  { title: "Chhoti chhoti aadatein ☀️",
+    text: "Teri good morning ki pehli message,\ntera mera naam itne pyaar se bolna,\nteri wo bachon jaisi sharaarat...\nInhi chhoti chhoti cheezon mein meri poori duniya hai ☀️" },
+  { title: "Woh chhoti si takraar 😤",
+    text: "Ek chhoti si ladai... par 10 minute mein hi 'sorry baby' aa gaya.\nHaath pakad ke bola — 'gussa mat ho na'... aur main phool jaati hoon.\nTujhse ladna bhi pyaar hai 😌" },
+  { title: "Jab tujhe pehli baar rota dekha 😭",
+    text: "Aisa kabhi socha nahi tha ke tujhe aansu mein dekhungi.\nMain chup ho gayi, bas tera haath pakad liya.\nUs din samajh li — main teri sabse badi taqat banungi 🤍" }
+];
+
+const LETTER = `Mere Jaan,
+
+Kuch log kehte hain pyaar ek ehsaas hai...
+par mere liye pyaar sirf tu hai.
+
+Har subah teri ek message din bana deti hai,
+har mushkil mein tera ek hug kaafi hota hai,
+aur har khushi adhoori lagti hai jab tak
+sabse pehle tujhe na bataun.
+
+Tune mujhe sikhaya hai ki pyaar bolna nahi,
+pyaar karna hota hai — roz,
+chhoti chhoti cheezon mein.
+
+Aaj tera janamdin hai, aur main bas ye dua karti hoon —
+teri hansi kabhi kam na ho,
+teri aankhon mein kabhi aansu na aaye,
+aur jitni khushi tune mujhe di hai,
+duniya usse hazaar guna wapas tujhe de.
+
+Janamdin bahut bahut mubarak ho, mere ❤️
+
+Sirf teri,
+[Your Name] 🤍`;
+/* ================= END OF EDIT SECTION ================= */
+
+/* ---------- Globals ---------- */
+const heartShape = confetti.shapeFromText({ text: "❤️", scalar: 2 });
+const PINKS = ["#ff4d6d","#ffb3c6","#ffd166","#c9184a"];
+document.getElementById("finaleH1").textContent =
+  "Janamdin Bahut Bahut Mubarak Ho, " + NAME + " ❤️";
+
+function show(id){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ---------- 💗 Hearts rising from her photo ---------- */
+function avatarHearts(){
+  const av=document.querySelector('.avatar-bg');
+  if(!av || av.style.display==='none') return;
+  const r=av.getBoundingClientRect();
+  confetti({particleCount:5,spread:70,startVelocity:10,gravity:-0.25,decay:.95,
+    scalar:1.6,shapes:[heartShape],colors:PINKS,
+    origin:{x:(r.left+r.width/2)/innerWidth,
+            y:(r.top+r.height/2)/innerHeight}});
+}
+setInterval(avatarHearts, 5000);   // har 5 second mein dil uddenge
+
+function start(){
+  // 🎵 Music: assets/birthday.mp3 — soft piano or the song she loves
+  // new Audio('assets/birthday.mp3').play();
+  show('s2'); listenForBlow(); burst(); avatarHearts();
+}
+
+/* ---------- Tap trail (har tap pe dil) ---------- */
+document.addEventListener('click', function(e){
+  const h=document.createElement('div'); h.className='trail';
+  h.textContent=['❤️','💖','💗'][Math.floor(Math.random()*3)];
+  h.style.left=(e.clientX-10)+'px'; h.style.top=(e.clientY-10)+'px';
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),900);
+});
+
+/* ---------- Act 2: candles ---------- */
+function blowOne(){
+  const f=[...document.querySelectorAll('.flame:not(.out)')];
+  if(!f.length) return;
+  f[0].classList.add('out');
+  if(!document.querySelector('.flame:not(.out)'))
+    setTimeout(()=>{ burst(); show('s3'); buildCards(); },900);
+}
+document.querySelectorAll('.flame').forEach(f=>f.onclick=blowOne);
+
+function listenForBlow(){
+  navigator.mediaDevices?.getUserMedia({audio:true}).then(st=>{
+    document.getElementById('micHint').textContent=
+      "🎤 Mic ready hai — ab hawa se blow karo!";
+    const ctx=new AudioContext(), src=ctx.createMediaStreamSource(st),
+          an=ctx.createAnalyser();
+    src.connect(an); const d=new Uint8Array(an.frequencyBinCount);
+    (function loop(){
+      an.getByteFrequencyData(d);
+      if(d.slice(0,12).reduce((a,b)=>a+b)/12>140) blowOne();
+      if(document.querySelector('.flame:not(.out)')) requestAnimationFrame(loop);
+    })();
+  }).catch(()=>{});
+}
+
+/* ---------- Act 3: shayari cards ---------- */
+let flipped=0;
+function buildCards(){
+  const g=document.getElementById('grid'); g.innerHTML="";
+  SHAYARI.forEach(line=>{
+    const c=document.createElement('div'); c.className='fcard';
+    c.innerHTML='<div class="finner"><div class="face front">❤️</div>'+
+                '<div class="face back">'+line+'</div></div>';
+    c.onclick=()=>{
+      if(c.classList.contains('flip')) return;
+      c.classList.add('flip'); flipped++;
+      const r=c.getBoundingClientRect();
+      confetti({particleCount:10,spread:55,startVelocity:22,gravity:.6,scalar:1.6,
+        origin:{x:(r.left+r.width/2)/innerWidth,y:(r.top+r.height/2)/innerHeight},
+        shapes:[heartShape],colors:PINKS});
+      if(flipped===SHAYARI.length)
+        setTimeout(()=>document.getElementById('cardsNext')
+          .classList.remove('hidden'),600);
+    };
+    g.appendChild(c);
+  });
+}
+function toPhotos(){ show('s4'); buildPhotos(); }
+
+/* ---------- Act 4: photos + lightbox ---------- */
+function buildPhotos(){
+  const p=document.getElementById('polaroids'); p.innerHTML="";
+  PHOTOS.forEach((ph,idx)=>{
+    const pol=document.createElement('div'); pol.className='polaroid';
+    pol.innerHTML=`<img src="${ph.src}" alt="${ph.caption}">
+      <div class="cap">${ph.caption}</div>`;
+    pol.onclick=()=>{
+      document.getElementById('lbImg').src=ph.src;
+      document.getElementById('lbCap').textContent=ph.caption;
+      document.getElementById('lightbox').classList.add('show');
+    };
+    const img=pol.querySelector('img');
+    img.onerror=()=>{ img.classList.add('fail'); pol.classList.add('noimg'); };
+    p.appendChild(pol);
+  });
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('show');
+}
+function toStories(){ show('s5'); nextStory(); }
+
+/* ---------- Act 5: stories ---------- */
+let si=0, typing=false;
+function nextStory(){
+  if(typing) return;
+  if(si>=STORIES.length){ show('s6'); return; }
+  typing=true;
+  const s=STORIES[si++];
+  document.getElementById('storyTitle').textContent=s.title;
+  document.getElementById('storyBtn').textContent =
+    si<STORIES.length ? "Ek aur yaad hai? 🥹" : "Ab kholo apna khat 💌";
+  typeText(document.getElementById('storyText'), s.text, 26, ()=>typing=false);
+}
+function typeText(el,text,sp,cb){
+  el.textContent=""; clearInterval(el._t); let i=0;
+  el._t=setInterval(()=>{ el.textContent=text.slice(0,++i);
+    if(i>=text.length){ clearInterval(el._t); cb&&cb(); } },sp);
+}
+
+/* ---------- Act 6: seal (3 taps) ---------- */
+let taps=0;
+document.getElementById('seal').onclick=function(){
+  taps++;
+  this.classList.remove('shake'); void this.offsetWidth; this.classList.add('shake');
+  const r=this.getBoundingClientRect();
+  confetti({particleCount:8,spread:60,startVelocity:20,gravity:.5,scalar:1.4,
+    origin:{x:(r.left+r.width/2)/innerWidth,y:(r.top+r.height/2)/innerHeight},
+    shapes:[heartShape]});
+  if(taps>=3) setTimeout(()=>{
+    burst(); show('s7');
+    typeText(document.getElementById('letterText'), LETTER, 24,
+      ()=>document.getElementById('lastBtn').classList.remove('hidden'));
+  },400);
+};
+
+/* ---------- Act 8: finale ---------- */
+function finale(){
+  show('s8'); heartRain(); avatarHearts();
+  setTimeout(heartRain,700); setTimeout(heartRain,1400);
+}
+function heartRain(){
+  for(let i=0;i<4;i++) setTimeout(()=>confetti({
+    particleCount:14,spread:85,startVelocity:32,gravity:.55,scalar:2,
+    shapes:[heartShape],colors:PINKS,origin:{x:Math.random(),y:.45}}), i*200);
+}
+function burst(){
+  for(let i=0;i<5;i++) setTimeout(()=>confetti({
+    particleCount:40,spread:70,startVelocity:45,colors:PINKS,
+    origin:{x:Math.random(),y:Math.random()*.4}}), i*180);
+}
+
+/* ---------- Floating hearts bg ---------- */
+for(let i=0;i<18;i++){
+  const h=document.createElement('div'); h.className='hf';
+  const s=10+Math.random()*18;
+  h.textContent=['❤️','💖','💗'][i%3];
+  h.style.cssText=`left:${Math.random()*100}vw;font-size:${s}px;
+    animation-duration:${7+Math.random()*9}s;animation-delay:${-Math.random()*12}s`;
+  document.body.appendChild(h);
+}
+</script>
+</body>
+</html>
